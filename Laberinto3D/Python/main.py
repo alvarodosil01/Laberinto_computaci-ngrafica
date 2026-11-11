@@ -11,6 +11,7 @@ from configuracion import SCREEN_WIDTH, SCREEN_HEIGHT, FOV, FPS
 from laberinto import generar, transitable
 from modelo import Modelo
 from texturas import cargar_textura
+from textura_pared import crear_textura_pared
 
 BASE = Path(__file__).resolve().parent
 TAM = 21
@@ -45,10 +46,12 @@ def dibujar(cubo, texturas, mapa, entrada, salida, x, z, ruta, camara, yaw):
             if pared:
                 cubo.dibujar(texturas['pared'], t_x=c, t_y=0.95,
                              t_z=f, sx=1, sy=1.9, sz=1)
+                cubo.dibujar(texturas['remate'], t_x=c, t_y=1.93,
+                             t_z=f, sx=1.04, sy=0.08, sz=1.04)
     # Bordes oscuros sobre cada prisma para distinguir paredes contiguas.
     glDisable(GL_LIGHTING)
     glDisable(GL_TEXTURE_2D)
-    glColor3f(0.055, 0.045, 0.04)
+    glColor3f(0.16, 0.16, 0.16)
     glLineWidth(2)
     glBegin(GL_LINES)
     for f, fila in enumerate(mapa):
@@ -102,20 +105,27 @@ def dibujar(cubo, texturas, mapa, entrada, salida, x, z, ruta, camara, yaw):
 def main():
     pygame.init()
     pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), DOUBLEBUF | OPENGL)
-    pygame.display.set_caption('Laberinto 3D | WASD mover/girar, 1/2/3 cámaras, L tono, I luz, N nuevo')
+    pygame.display.set_caption('Laberinto 3D | WASD mover, ratón mirar, 1/2/3 cámaras, L tono, I luz, N nuevo')
     glEnable(GL_DEPTH_TEST)
     glEnable(GL_NORMALIZE)
     glClearColor(0.08, 0.09, 0.12, 1)
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, (0.85, 0.85, 0.85, 1))
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, (1, 1, 1, 1))
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, (0.25, 0.25, 0.25, 1))
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 18)
     cubo = Modelo(str(BASE / 'modelos' / 'cubo.obj'))
     texturas = {nombre: cargar_textura(str(BASE / 'texturas' / archivo))
-                for nombre, archivo in {'pared': 'arenisca.png', 'suelo': 'granito.png',
+                for nombre, archivo in {'remate': 'marmol.png', 'suelo': 'granito.png',
                                         'entrada': 'verde.png', 'salida': 'rojo.png',
                                         'personaje': 'azul.png', 'cabeza': 'amarillo.png',
                                         'frente': 'naranja.png'}.items()}
+    texturas['pared'] = crear_textura_pared()
     mapa, entrada, salida, x, z, ruta = nuevo()
-    yaw, camara, luz_local, tono, terminado = 0.0, 1, False, 0, False
+    yaw, pitch, yaw_personaje = 0.0, 0.0, 0.0
+    camara, luz_local, tono, terminado = 1, False, 0, False
+    pygame.event.set_grab(True)
+    pygame.mouse.set_visible(False)
+    pygame.mouse.get_rel()
     reloj = pygame.time.Clock()
     activo = True
     while activo:
@@ -123,29 +133,44 @@ def main():
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
                 activo = False
+            elif evento.type == pygame.MOUSEMOTION and camara in (1, 3):
+                yaw += evento.rel[0] * 0.16
+                limite_inferior, limite_superior = (-70, 70) if camara == 1 else (8, 55)
+                pitch = max(limite_inferior, min(limite_superior,
+                                                pitch - evento.rel[1] * 0.12))
             elif evento.type == pygame.KEYDOWN:
                 if evento.key == pygame.K_ESCAPE:
                     activo = False
                 elif evento.key == pygame.K_1:
                     camara = 1
+                    pitch = 0.0
+                    pygame.event.set_grab(True)
+                    pygame.mouse.set_visible(False)
+                    pygame.mouse.get_rel()
                 elif evento.key == pygame.K_2:
                     camara = 2
+                    pygame.event.set_grab(False)
+                    pygame.mouse.set_visible(True)
                 elif evento.key == pygame.K_3:
                     camara = 3
+                    pitch = 20.0
+                    pygame.event.set_grab(True)
+                    pygame.mouse.set_visible(False)
+                    pygame.mouse.get_rel()
                 elif evento.key == pygame.K_l:
                     tono = (tono + 1) % len(TONOS)
                 elif evento.key == pygame.K_i:
                     luz_local = not luz_local
                 elif evento.key == pygame.K_n:
                     mapa, entrada, salida, x, z, ruta = nuevo()
-                    yaw, terminado = 0.0, False
-                    pygame.display.set_caption('Laberinto 3D | WASD mover/girar, 1/2/3 cámaras, L tono, I luz, N nuevo')
+                    yaw, pitch, yaw_personaje, terminado = 0.0, 0.0, 0.0, False
+                    pygame.display.set_caption('Laberinto 3D | WASD mover, ratón mirar, 1/2/3 cámaras, L tono, I luz, N nuevo')
         teclas = pygame.key.get_pressed()
         if not terminado:
-            yaw += (int(teclas[pygame.K_d]) - int(teclas[pygame.K_a])) * 110 * dt
+            yaw += (int(teclas[pygame.K_RIGHT]) - int(teclas[pygame.K_LEFT])) * 110 * dt
             angulo = math.radians(yaw)
             avance = int(teclas[pygame.K_w]) - int(teclas[pygame.K_s])
-            lateral = int(teclas[pygame.K_e]) - int(teclas[pygame.K_q])
+            lateral = int(teclas[pygame.K_d]) - int(teclas[pygame.K_a])
             norma = math.hypot(avance, lateral)
             if norma:
                 dx = (math.sin(angulo)*avance + math.cos(angulo)*lateral) * 2.8*dt/norma
@@ -154,6 +179,8 @@ def main():
                     x += dx
                 if transitable(mapa, x, z+dz):
                     z += dz
+                if camara == 3 and (dx or dz):
+                    yaw_personaje = math.degrees(math.atan2(dx, -dz))
                 if math.hypot(x-ruta[-1][0], z-ruta[-1][1]) >= 0.15:
                     ruta.append((x, z))
             if (int(z+0.5), int(x+0.5)) == salida:
@@ -179,29 +206,45 @@ def main():
             distancia = 0.45
             for paso in range(5, 25):
                 intento = paso * 0.1
-                cx = x - math.sin(angulo) * intento
-                cz = z + math.cos(angulo) * intento
+                horizontal = math.cos(math.radians(pitch)) * intento
+                cx = x - math.sin(angulo) * horizontal
+                cz = z + math.cos(angulo) * horizontal
                 if not transitable(mapa, cx, cz, radio=0.08):
                     break
                 distancia = intento
-            cx = x - math.sin(angulo) * distancia
-            cz = z + math.cos(angulo) * distancia
-            gluLookAt(cx, 1.35 + distancia * 0.38, cz, x, 0.75, z, 0, 1, 0)
+            horizontal = math.cos(math.radians(pitch)) * distancia
+            cx = x - math.sin(angulo) * horizontal
+            cz = z + math.cos(angulo) * horizontal
+            cy = 1.65 + math.sin(math.radians(pitch)) * distancia
+            gluLookAt(cx, cy, cz, x, 0.75, z, 0, 1, 0)
         else:
             angulo = math.radians(yaw)
-            gluLookAt(x, 0.85, z, x+math.sin(angulo), 0.85,
-                      z-math.cos(angulo), 0, 1, 0)
+            inclinacion = math.radians(pitch)
+            gluLookAt(x, 0.85, z,
+                      x+math.sin(angulo)*math.cos(inclinacion),
+                      0.85+math.sin(inclinacion),
+                      z-math.cos(angulo)*math.cos(inclinacion), 0, 1, 0)
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         color = TONOS[tono][1]
-        ambiente = 0.07 if luz_local else 0.28
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (*(v * ambiente for v in color), 1))
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (*(v * 0.85 for v in color), 1))
+        ambiente = 0.22 if luz_local else 0.38
+        glLightModelfv(GL_LIGHT_MODEL_AMBIENT, (*(v * ambiente for v in color), 1))
+        glLightfv(GL_LIGHT0, GL_AMBIENT, (0, 0, 0, 1))
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, (*(v * 0.9 for v in color), 1))
         glLightfv(GL_LIGHT0, GL_POSITION, (x, 0.85, z, 1) if luz_local else (0.4, 1, 0.5, 0))
         glLightf(GL_LIGHT0, GL_LINEAR_ATTENUATION, 0.22 if luz_local else 0)
         glLightf(GL_LIGHT0, GL_QUADRATIC_ATTENUATION, 0.045 if luz_local else 0)
-        dibujar(cubo, texturas, mapa, entrada, salida, x, z, ruta, camara, yaw)
+        if luz_local:
+            glDisable(GL_LIGHT1)
+        else:
+            glEnable(GL_LIGHT1)
+            glLightfv(GL_LIGHT1, GL_AMBIENT, (0, 0, 0, 1))
+            glLightfv(GL_LIGHT1, GL_DIFFUSE, (*(v * 0.45 for v in color), 1))
+            glLightfv(GL_LIGHT1, GL_POSITION, (-0.6, 0.8, -0.4, 0))
+        dibujar(cubo, texturas, mapa, entrada, salida, x, z, ruta, camara, yaw_personaje)
         pygame.display.flip()
+    pygame.event.set_grab(False)
+    pygame.mouse.set_visible(True)
     pygame.quit()
 
 
