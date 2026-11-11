@@ -45,7 +45,7 @@ def main():
     from juego import Juego
     juego = Juego('normal', semilla=3)
     for tecla in (pygame.K_n, pygame.K_F3, pygame.K_2, pygame.K_3, pygame.K_m, pygame.K_h, pygame.K_l, pygame.K_i,
-                  pygame.K_5, pygame.K_1, pygame.K_ESCAPE):
+                  pygame.K_t, pygame.K_i, pygame.K_t, pygame.K_5, pygame.K_1, pygame.K_ESCAPE):   # T: terror/clásico; I: linterna
         pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=tecla))
     try:
         juego.ejecutar()                   # Bucle real; el Esc de la cola lo termina y cerrar() libera todo.

@@ -256,7 +256,7 @@ class Interfaz:
         lineas = ('W A S D  mover (según la cámara)', 'Ratón o flechas izq/der  orientar la vista',
                   '1 / 2 / 3  cámara: primera persona / cenital / tercera',
                   'F1 F2 F3 (o 4 5 6)  dificultad', 'N  nuevo laberinto     L  tono     I  luz',
-                  'M  mapa    H  ocultar ayuda    Esc  salir')
+                  'M  mapa    H  ayuda    T  modo terror/clásico    Esc  salir')
         h = 16 * len(lineas) + 14
         y = self.alto - h - 12
         self._rect(A, 12, y, 400, h, FONDO)

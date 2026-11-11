@@ -17,6 +17,7 @@ import pygame
 from pygame.locals import DOUBLEBUF, OPENGL
 from OpenGL.GL import *
 
+from ambiente_terror import AmbienteTerror
 from buffers import MallaGL, RutaGL
 from camara_tercera import CamaraTercera
 from configuracion import (ESFERA_ESCALA, FAR_PLANE_JUEGO, FOV, FPS, NEAR_PLANE, SCREEN_HEIGHT,
@@ -69,6 +70,7 @@ class Juego:
             'puerta_cerrada': crear_textura_puerta(False), 'puerta_abierta': crear_textura_puerta(True),
             'esfera': crear_textura_esfera(), 'portal': self._textura_portal(),
         }
+        self.terror = AmbienteTerror(self.texturas, carpeta)      # Modo terror (tecla T); ver ambiente_terror.py.
         self.cubo = Modelo(str(BASE / 'modelos' / 'cubo.obj'))
         self.esfera = Modelo(str(BASE / 'modelos' / 'esfera_lr.obj'))
         self.escena = EscenaEstatica(self.texturas)
@@ -174,6 +176,8 @@ class Juego:
         return True
 
     def _tecla(self, tecla):
+        if self.terror.tecla(tecla, self):                        # T (modo terror) e I (linterna, en modo terror).
+            return
         if tecla == pygame.K_1:
             self._cambiar_camara(1)
         elif tecla == pygame.K_2:
@@ -217,11 +221,13 @@ class Juego:
         teclas = pygame.key.get_pressed() if teclas is None else teclas
         p = self.partida
         self.t_anim = self.reloj()
+        caminando = False
         if not p.terminada:
             self.yaw += (int(teclas[pygame.K_RIGHT]) - int(teclas[pygame.K_LEFT])) * 110 * dt
             avance = int(teclas[pygame.K_w]) - int(teclas[pygame.K_s])
             lateral = int(teclas[pygame.K_d]) - int(teclas[pygame.K_a])
             dx, dz = p.mover_en_direccion(self.yaw, avance, lateral, dt)
+            caminando = bool(dx or dz)
             if self.camara == 3 and (dx or dz):
                 self.yaw_personaje = math.degrees(math.atan2(dx, -dz))
         for evento in p.actualizar(dt):
@@ -234,23 +240,29 @@ class Juego:
             elif evento == 'salida':
                 pygame.display.set_caption('¡Salida alcanzada! Pulsa N para crear otro laberinto')
         self._sincronizar_ruta()
+        self.terror.actualizar(dt, caminando, self)
         if self.camara == 3:
             self.cam3.actualizar(dt, p.mapa, p.x, p.z, self.yaw, self.pitch, p.bloqueadas())
 
     # ------------------------------------------------------------------ dibujo
     def dibujar(self):
         p = self.partida
+        self.terror.antes_de_limpiar(self.camara)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         (glEnable if self.usar_cull else glDisable)(GL_CULL_FACE)
         self._aplicar_camara()
         self._aplicar_luces()
         glEnable(GL_LIGHTING)
+        self.terror.empezar_escena(self)                        # Shader de linterna + niebla (solo modo terror, cámaras 1/3).
         self.escena.dibujar_solidos(p.puerta.desbloqueada)
         self._dibujar_dinamicos()
-        self.escena.dibujar_aristas()
+        self.terror.terminar_escena(self)                       # Apaga el shader y dibuja los halos.
+        if not self.terror.activo_3d(self.camara):
+            self.escena.dibujar_aristas()
         if self.camara == 2:
             self._dibujar_cenital()
         glDisable(GL_LIGHTING)
+        self.terror.dibujar_efectos(self)                       # Viñeta y grano, antes del HUD.
         if self.mostrar_hud:
             mensaje = self._mensaje if self.reloj() < self._mensaje_hasta else ''
             self.hud.dibujar(p, self.camara, self.yaw, self.mostrar_mapa, self.mostrar_ayuda, mensaje, self.t_anim)
@@ -275,11 +287,14 @@ class Juego:
             mirar_a(self.cam3.posicion, self.cam3.objetivo, (0, 1, 0))
         else:
             a, inc = math.radians(self.yaw), math.radians(self.pitch)
-            mirar_a((p.x, 0.85, p.z),
-                    (p.x + math.sin(a) * math.cos(inc), 0.85 + math.sin(inc), p.z - math.cos(a) * math.cos(inc)),
+            oy = self.terror.balanceo_y()                       # 0 en modo clásico.
+            mirar_a((p.x, 0.85 + oy, p.z),
+                    (p.x + math.sin(a) * math.cos(inc), 0.85 + oy + math.sin(inc), p.z - math.cos(a) * math.cos(inc)),
                     (0, 1, 0))
 
     def _aplicar_luces(self):
+        if self.terror.luces_fijas(self):                       # Modo terror: iluminación propia (shader / cenital).
+            return
         p = self.partida
         glEnable(GL_LIGHT0)
         color = TONOS[self.tono][1]
@@ -378,6 +393,7 @@ class Juego:
         for modelo in (self.cubo, self.esfera):
             modelo.liberar()
         self.hud.liberar()
+        self.terror.liberar()
         self.ruta_gl.liberar()
         if self.malla_niebla:
             self.malla_niebla.liberar()

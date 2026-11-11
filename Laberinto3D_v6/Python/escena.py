@@ -26,6 +26,7 @@ class EscenaEstatica:
         self.mallas = {}
         self.estadisticas = {}          # grupo -> dict con vértices sueltos / únicos / índices.
         self.llamadas_ultimo_dibujo = 0
+        self.emision_grupos = {}        # grupo -> color emisivo (lo rellena el modo terror; vacío = aspecto clásico).
 
     @property
     def construida(self):
@@ -63,18 +64,28 @@ class EscenaEstatica:
             if malla is None:
                 continue
             glBindTexture(GL_TEXTURE_2D, self.texturas[TEXTURA_DE_GRUPO[nombre]])
+            self._emision(nombre)
             malla.dibujar()
+            self._emision(None)
             llamadas += 1
         if puerta_desbloqueada and 'portal' in self.mallas:
             # El fondo de la puerta brilla (sin iluminación): se ve al abrirla.
             glDisable(GL_LIGHTING)
             glBindTexture(GL_TEXTURE_2D, self.texturas['portal'])
+            self._emision('portal')
             self.mallas['portal'].dibujar()
+            self._emision(None)
             glEnable(GL_LIGHTING)
             llamadas += 1
         glBindTexture(GL_TEXTURE_2D, 0)
         glDisable(GL_TEXTURE_2D)
         self.llamadas_ultimo_dibujo = llamadas
+
+    def _emision(self, grupo):
+        """Fija (o quita, con None) el material emisivo del grupo, si el modo terror lo ha definido."""
+        if self.emision_grupos and (grupo is None or grupo in self.emision_grupos):
+            color = self.emision_grupos.get(grupo, (0, 0, 0))
+            glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, (*color, 1))
 
     def dibujar_aristas(self):
         """Líneas oscuras sobre los bordes de los muros (sin luz ni textura)."""

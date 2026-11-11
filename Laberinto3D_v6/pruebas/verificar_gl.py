@@ -144,6 +144,7 @@ def ir_a(juego, celda, reloj, dt=1 / 60):
 def main():
     reloj = Reloj()
     juego = Juego('normal', semilla=11, reloj=reloj)
+    juego.terror.fijar(False)      # Estas pruebas comprueban el aspecto clásico; el modo terror se prueba en verificar_terror.py.
     p = juego.partida
     info_gl = f"{glGetString(GL_VERSION).decode()} | {glGetString(GL_RENDERER).decode()}"
     print('Contexto:', info_gl)

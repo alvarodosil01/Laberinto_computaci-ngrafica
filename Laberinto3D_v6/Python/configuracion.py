@@ -96,3 +96,60 @@ TERCERA_ABANICO_GRADOS = 14.0  # Rayos laterales para anticipar muros al girar.
 
 # Interfaz.
 DURACION_MENSAJE = 3.0
+
+
+# ======================================================================================
+# Ambiente de terror (ambiente_terror.py). Tecla T: modo terror / modo clásico.
+# ======================================================================================
+TERROR_ACTIVO_AL_INICIO = True      # True: el juego arranca en modo terror (T alterna con el aspecto clásico).
+
+# --- Oscuridad y niebla ---
+TERROR_COLOR_FONDO     = (0.010, 0.014, 0.026)   # Color de fondo y de la niebla (casi negro azulado).
+TERROR_AMBIENTE        = 0.045                    # Luz ambiente en 1ª/3ª persona (0 = negro total; 0.03-0.06 recomendado).
+TERROR_AMBIENTE_CENITAL = 0.42                    # Ambiente en la cámara cenital (2), para que el mapa siga siendo legible.
+TERROR_NIEBLA_ALCANCE  = 8.0                      # Distancia (unidades) a la que solo se ve ~5 % de la escena. Menor = más densa.
+
+# --- Linterna (tecla I la enciende/apaga en modo terror) ---
+TERROR_LINTERNA_ENCENDIDA = True                  # Estado inicial de la linterna.
+TERROR_LINTERNA_ANGULO_INT = 13.0                 # Semiángulo (grados) del cono con intensidad plena.
+TERROR_LINTERNA_ANGULO_EXT = 27.0                 # Semiángulo (grados) donde la luz llega a cero (borde suave entre ambos).
+TERROR_LINTERNA_INTENSIDAD = 2.2                  # Potencia de la linterna. Súbela si queda demasiado oscuro.
+TERROR_LINTERNA_ATEN_LINEAL = 0.16                # Atenuación por distancia (término lineal).
+TERROR_LINTERNA_ATEN_CUAD   = 0.07                # Atenuación por distancia (término cuadrático).
+
+# --- Parpadeo de la linterna ---
+TERROR_PARPADEO_RUIDO     = 0.06                  # Fluctuación continua de intensidad (0.06 = ±6 %).
+TERROR_PARPADEO_INTERVALO = (5.0, 14.0)           # Segundos (mín, máx) entre ráfagas de parpadeo fuerte.
+TERROR_PARPADEO_RAFAGA    = 0.35                  # Duración (s) de cada ráfaga de parpadeo.
+TERROR_APAGON_CADA        = 75.0                  # Segundos de media entre apagones breves (0 = sin apagones).
+TERROR_APAGON_DURACION    = (0.2, 0.5)            # Duración (s) mínima y máxima del apagón.
+
+# --- Luces propias y halos ---
+TERROR_EMISION_FACTOR = 3.0                       # Multiplicador del brillo propio de las esferas (usan el material emisivo).
+TERROR_EMISION_PORTAL = (0.9, 1.3, 1.0)           # Brillo propio del portal de la puerta abierta (verde).
+TERROR_EMISION_MARCAS = (0.10, 0.10, 0.10)        # Brillo tenue de las marcas de entrada y salida (orientación).
+TERROR_HALO           = True                      # Halo aditivo alrededor de las esferas (se ven de lejos entre la niebla).
+TERROR_HALO_TAMANO    = 1.0                       # Tamaño (unidades) del halo.
+# Tonos de la tecla L en modo terror (mismo orden que TONOS: blanco, cálido, frío, verde, violeta): fríos y enfermizos.
+TERROR_TONOS = ((0.78, 0.88, 0.95), (0.95, 0.85, 0.55), (0.45, 0.65, 1.00), (0.50, 0.95, 0.55), (0.70, 0.50, 0.85))
+
+# --- Texturas sucias (se generan al arrancar; no cambian tamaño ni UV) ---
+TERROR_TEX_DESATURACION = 0.45                    # 0 = color original, 1 = escala de grises.
+TERROR_TEX_OSCURECER    = 0.80                    # Multiplicador de brillo del albedo.
+TERROR_TEX_HOLLIN       = 0.55                    # Oscurecimiento de la base de las paredes (0-1).
+TERROR_TEX_HUMEDAD      = 0.50                    # Manchas de humedad (0-1).
+TERROR_TEX_OXIDO        = 0.35                    # Vetas de óxido en las paredes (0-1).
+TERROR_TEX_GRIETAS      = 9                       # Número de grietas/rayones por textura.
+TERROR_RETRO            = True                    # GL_NEAREST al ampliar (píxeles visibles); mipmaps al reducir.
+
+# --- Pantalla ---
+TERROR_VINETA = 0.80                              # Oscurecimiento de los bordes (0 = sin viñeta, 1 = muy fuerte).
+TERROR_GRANO  = 0.07                              # Opacidad del grano de película (0 = sin grano).
+TERROR_GRANO_TAMANO = 2                           # Tamaño en píxeles de cada grano.
+TERROR_BALANCEO_AMPLITUD    = 0.018               # Balanceo vertical de la cámara al caminar (unidades). 0 = sin balanceo.
+TERROR_BALANCEO_FRECUENCIA  = 1.9                 # Pasos por segundo.
+TERROR_RESPIRACION_AMPLITUD = 0.004               # Respiración de la cámara al estar quieto (unidades).
+
+# --- Sonido generado por código (se desactiva solo si no hay dispositivo de audio) ---
+TERROR_VOLUMEN         = 0.5                      # 0 = sin sonido. Volumen general (0-1).
+TERROR_LATIDO_BPM      = (52.0, 118.0)            # Latidos por minuto con la linterna encendida / en la oscuridad.
