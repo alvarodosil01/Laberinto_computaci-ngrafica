@@ -5,7 +5,7 @@ Ejecutar (con pantalla, o bajo xvfb-run):   python pruebas/verificar_arranque.py
   2. lanza `main.py` como proceso independiente desde OTRO directorio y comprueba que sigue vivo y sin errores
      tras unos segundos;
   3. ejecuta el bucle principal real (`Juego.ejecutar`) con una secuencia de teclas/eventos en la cola
-     (N, F3, 2, 3, M, H, L, I, Esc) y comprueba que termina limpiamente liberando todo.
+     (N, F3, 2, 3, H, L, I, E, R, Tab, Esc) y comprueba que termina limpiamente liberando todo.
 """
 import compileall
 import os
@@ -44,9 +44,13 @@ def main():
     from buffers import LoteDinamico, MallaGL
     from juego import Juego
     juego = Juego('normal', semilla=3)
-    for tecla in (pygame.K_n, pygame.K_F3, pygame.K_2, pygame.K_3, pygame.K_m, pygame.K_h, pygame.K_l, pygame.K_i,
-                  pygame.K_t, pygame.K_i, pygame.K_t, pygame.K_5, pygame.K_1, pygame.K_ESCAPE):   # T: terror/clásico; I: linterna
-        pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=tecla))
+    for tecla in (pygame.K_n, pygame.K_F3, pygame.K_2, pygame.K_3, pygame.K_h, pygame.K_l, pygame.K_i,
+                  pygame.K_e, pygame.K_r, pygame.K_i, pygame.K_r, pygame.K_5, pygame.K_1,
+                  pygame.K_TAB, 'soltar_tab', pygame.K_ESCAPE):      # R: terror/clásico; E: linterna; Tab: mapa
+        if tecla == 'soltar_tab':
+            pygame.event.post(pygame.event.Event(pygame.KEYUP, key=pygame.K_TAB))
+        else:
+            pygame.event.post(pygame.event.Event(pygame.KEYDOWN, key=tecla))
     try:
         juego.ejecutar()                   # Bucle real; el Esc de la cola lo termina y cerrar() libera todo.
         terminado = True

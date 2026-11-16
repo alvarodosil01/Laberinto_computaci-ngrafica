@@ -37,7 +37,7 @@ from texturas_procedurales import (crear_textura_esfera, crear_textura_musgo, cr
 
 BASE = Path(__file__).resolve().parent
 TITULO = ('Laberinto 3D v6 | WASD mover, ratón mirar, 1/2/3 cámaras, F1/F2/F3 dificultad, '
-          'L tono, I luz, M mapa, H ayuda, N nuevo, Esc salir')
+          'L tono, I luz, E linterna, R modo terror, Tab mapa (mantener), H ayuda, N nuevo, Esc salir')
 TONOS = (
     ('blanco', (1.0, 1.0, 1.0)),
     ('cálido', (1.0, 0.72, 0.43)),
@@ -70,7 +70,7 @@ class Juego:
             'puerta_cerrada': crear_textura_puerta(False), 'puerta_abierta': crear_textura_puerta(True),
             'esfera': crear_textura_esfera(), 'portal': self._textura_portal(),
         }
-        self.terror = AmbienteTerror(self.texturas, carpeta)      # Modo terror (tecla T); ver ambiente_terror.py.
+        self.terror = AmbienteTerror(self.texturas, carpeta)      # Modo terror (tecla R); ver ambiente_terror.py.
         self.cubo = Modelo(str(BASE / 'modelos' / 'cubo.obj'))
         self.esfera = Modelo(str(BASE / 'modelos' / 'esfera_lr.obj'))
         self.escena = EscenaEstatica(self.texturas)
@@ -85,7 +85,7 @@ class Juego:
         self.dificultad = por_clave(dificultad) if isinstance(dificultad, str) else dificultad
         self.camara, self.luz_local, self.tono = 1, False, 0
         self.yaw, self.pitch, self.yaw_personaje = 0.0, 0.0, 0.0
-        self.mostrar_mapa, self.mostrar_ayuda = True, True
+        self.mostrar_mapa, self.mostrar_ayuda = False, True      # El minimapa solo se ve mientras se mantiene Tab.
         self.mostrar_hud = True          # Se desactiva en las pruebas gráficas para analizar solo la escena 3D.
         self.usar_cull = True            # Idem: permite comparar con y sin descarte de caras traseras.
         self._mensaje, self._mensaje_hasta = '', 0.0
@@ -170,13 +170,19 @@ class Juego:
             inferior, superior = (-70, 70) if self.camara == 1 else (8, 55)
             self.pitch = max(inferior, min(superior, self.pitch - evento.rel[1] * 0.12))
         elif evento.type == pygame.KEYDOWN:
+            if evento.key == pygame.K_TAB:
+                self.mostrar_mapa = True                         # Mantener Tab: abre el minimapa.
             self._tecla(evento.key)
             if evento.key == pygame.K_ESCAPE:
                 return False
+        elif evento.type == pygame.KEYUP and evento.key == pygame.K_TAB:
+            self.mostrar_mapa = False                            # Soltar Tab: lo cierra.
+        elif evento.type == getattr(pygame, 'WINDOWFOCUSLOST', -1):
+            self.mostrar_mapa = False                            # Si la ventana pierde el foco con Tab pulsado.
         return True
 
     def _tecla(self, tecla):
-        if self.terror.tecla(tecla, self):                        # T (modo terror) e I (linterna, en modo terror).
+        if self.terror.tecla(tecla, self):                        # R (modo terror) y E (linterna, en modo terror).
             return
         if tecla == pygame.K_1:
             self._cambiar_camara(1)
@@ -188,8 +194,6 @@ class Juego:
             self.tono = (self.tono + 1) % len(TONOS)
         elif tecla == pygame.K_i:
             self.luz_local = not self.luz_local
-        elif tecla == pygame.K_m:
-            self.mostrar_mapa = not self.mostrar_mapa
         elif tecla == pygame.K_h:
             self.mostrar_ayuda = not self.mostrar_ayuda
         elif tecla == pygame.K_n:

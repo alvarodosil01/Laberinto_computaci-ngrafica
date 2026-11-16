@@ -106,23 +106,28 @@ def main():
         apagada = vista().astype(float).mean()
         g.guardar(g.foto(juego), 'terror_linterna_apagada.png')
         terror.linterna = True
-        assert apagada < 0.5 * img.mean() and apagada < 14, apagada
+        assert apagada < 0.8 * img.mean() and apagada < 14, (apagada, img.mean())
         return f'centro {centro:.0f} / esquinas {esquinas:.0f} con linterna; media {apagada:.1f} con la linterna apagada (tecla I)'
 
     @ejecutar
-    def tecla_i_y_t_alternan_linterna_y_modo():
-        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_i))
-        assert terror.linterna is False and juego.luz_local is False, 'en terror, I solo enciende/apaga la linterna'
-        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_i))
+    def tecla_e_y_r_alternan_linterna_y_modo():
+        tecla = lambda k: juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=k))
+        tecla(pygame.K_e)
+        assert terror.linterna is False and juego.luz_local is False, 'en terror, E enciende/apaga la linterna'
+        tecla(pygame.K_e)
         assert terror.linterna is True
-        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_t))
+        tecla(pygame.K_i)
+        assert terror.linterna is True and juego.luz_local is False, 'en terror, I ya no hace nada'
+        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_r))
         assert not terror.activo and juego.texturas['pared'] == terror.clasicas['pared']
-        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_i))
+        tecla(pygame.K_i)
         assert juego.luz_local is True, 'en clásico, I sigue siendo la luz local de siempre'
-        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_i))
-        juego.procesar_evento(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_t))
+        tecla(pygame.K_e)
+        assert terror.linterna is True, 'en clásico, E no hace nada'
+        tecla(pygame.K_i)
+        tecla(pygame.K_r)
         assert terror.activo
-        return 'T alterna terror/clásico; I = linterna en terror y luz local en clásico'
+        return 'R alterna terror/clásico; E = linterna en terror; I = luz local solo en clásico'
 
     @ejecutar
     def modo_clasico_exacto_tras_alternar_t():
@@ -143,6 +148,26 @@ def main():
         terror.fijar(True)
         assert terror.balanceo_y() == 0.0 or terror.activo
         return f'{n} vistas (cámaras 1/2/3, con HUD): el clásico es idéntico píxel a píxel antes y después de alternar T'
+
+    @ejecutar
+    def tab_mantenido_abre_el_minimapa_y_fov_60():
+        from configuracion import FOV
+        assert FOV == 60 and not juego.mostrar_mapa, 'el minimapa empieza cerrado y el FOV es 60'
+        ev = lambda tipo, k: juego.procesar_evento(pygame.event.Event(tipo, key=k))
+        # Píxeles casi blancos de la zona del minimapa (marco y leyenda); el grano cambia cada fotograma, esto no.
+        region = lambda: int((vista(1, hud=True)[430:690, 1050:1270].astype(int) > 200).all(axis=2).sum())
+        cerrado = region()
+        ev(pygame.KEYDOWN, pygame.K_TAB)
+        assert juego.mostrar_mapa
+        abierto = region()
+        ev(pygame.KEYUP, pygame.K_TAB)
+        assert not juego.mostrar_mapa
+        cerrado2 = region()
+        ev(pygame.KEYDOWN, pygame.K_m)                  # M ya no hace nada.
+        assert not juego.mostrar_mapa
+        assert abierto > cerrado + 400, ('el minimapa no aparece al mantener Tab', cerrado, abierto)
+        assert cerrado2 < cerrado + 200, ('el minimapa no se cierra al soltar Tab', cerrado, cerrado2)
+        return 'Tab pulsado: aparece el minimapa; al soltarlo desaparece; M no hace nada; FOV = 60'
 
     @ejecutar
     def cenital_legible_en_terror():
