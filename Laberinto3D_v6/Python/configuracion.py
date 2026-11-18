@@ -18,7 +18,7 @@ SCREEN_HEIGHT       = 720                           # Altura de la ventana gráf
 SCREEN_ASPECT_RATIO = SCREEN_WIDTH / SCREEN_HEIGHT  # Relación de aspecto de la ventana gráfica
 
 # Configuración de la proyección
-FOV         = 45    # (Field Of View) Campo o ángulo de vision desde el centro de la cámara.
+FOV         = 60    # (Field Of View) Campo o ángulo de vision desde el centro de la cámara.
 NEAR_PLANE  = 0.1   # Distancia del plano más cercano a la cámara.
 FAR_PLANE   = 50    # Distancia del plano más lejano a la cámara.
 
@@ -99,7 +99,7 @@ DURACION_MENSAJE = 3.0
 
 
 # ======================================================================================
-# Ambiente de terror (ambiente_terror.py). Tecla T: modo terror / modo clásico.
+# Ambiente de terror (ambiente_terror.py). Tecla R: modo terror / modo clásico; tecla E: linterna.
 # ======================================================================================
 TERROR_ACTIVO_AL_INICIO = True      # True: el juego arranca en modo terror (T alterna con el aspecto clásico).
 

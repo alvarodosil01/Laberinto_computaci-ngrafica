@@ -30,26 +30,27 @@ servidor sin pantalla, además, `xvfb` y Mesa; ver «Pruebas».)
 | Ratón / flechas ← → | Orientar la vista en primera y tercera persona |
 | 1 / 2 / 3 | Primera persona / cenital / tercera persona |
 | L | Cambiar el tono de la luz (blanco, cálido, frío, verde, violeta) |
-| I | Modo clásico: alternar iluminación general y luz local. **Modo terror: encender/apagar la linterna** |
+| I | Solo modo clásico: alternar iluminación general y luz local (en modo terror no hace nada) |
+| **E** | **Modo terror: encender/apagar la linterna** |
 | N | Nuevo laberinto (misma dificultad, cronómetro a cero) |
 | **F1 / F2 / F3** (o **4 / 5 / 6**) | **Dificultad Fácil / Normal / Difícil** (genera una partida nueva) |
-| **T** | **Alternar modo terror / modo clásico** (el terror es el predeterminado) |
-| **M** | Mostrar/ocultar el minimapa |
+| **R** | **Alternar modo terror / modo clásico** (el terror es el predeterminado) |
+| **Tab** (mantener) | **Mostrar el minimapa mientras se mantiene pulsada** (al soltarla se cierra) |
 | **H** | Mostrar/ocultar la ayuda en pantalla |
 | Esc | Salir |
 
 Los controles nuevos (en negrita) aparecen también en pantalla. La dificultad activa se muestra en el panel superior izquierdo
 junto con la forma de cambiarla.
 
-## Modo terror (tecla T)
+## Modo terror (tecla R)
 
 Retoque de atmósfera estilo survival horror, sin cambiar la jugabilidad. Todo el código está en `Python/ambiente_terror.py` y se
 conecta con unos pocos ganchos en `juego.py`; los parámetros están en `configuracion.py` (bloque `TERROR_*`, comentados).
-Con **T** se vuelve al aspecto clásico, cuya escena 3D queda idéntica píxel a píxel a la de antes (comprobado contra la versión anterior).
+Con **R** se vuelve al aspecto clásico, cuya escena 3D queda idéntica píxel a píxel a la de antes (comprobado contra la versión anterior).
 
 * **Oscuridad y niebla**: ambiente casi nulo, fondo negro azulado y niebla exponencial (`exp2`) con ~8 unidades de alcance. La cámara
   cenital sigue legible: sin niebla y con más ambiente.
-* **Linterna en cono** que sigue la mirada (yaw/pitch) en primera persona y sale de la cabeza del personaje en tercera. I la
+* **Linterna en cono** que sigue la mirada (yaw/pitch) en primera persona y sale de la cabeza del personaje en tercera. E la
   enciende/apaga. Parpadea (ruido continuo, ráfagas nerviosas cada 5–14 s y, muy rara vez, un apagón de 0.2–0.5 s).
 * **Un único par de shaders GLSL `#version 120`** (iluminación por píxel + niebla) que lee los atributos fijos (`gl_Vertex`, `gl_Normal`,
   `gl_MultiTexCoord0`, matrices `gl_*`): los VBO/EBO y el formato de vértice no cambian. Solo se activa al dibujar sólidos y objetos
@@ -79,7 +80,7 @@ Si queda demasiado oscuro o va lento, ajusta en `configuracion.py`: `TERROR_AMBI
    la pantalla final muestra dificultad, tiempo y esferas recogidas, y explica cómo seguir (N, F1/F2/F3, Esc).
 4. **Mapa explorado**: solo se revela lo que se ha recorrido. Regla: al entrar en una celda se revelan las celdas de suelo a ≤ *R* pasos
    de pasillo (sin atravesar paredes) y las paredes que las rodean (*R* depende de la dificultad). Lo no explorado se ve oscuro. El
-   minimapa (abajo a la derecha, cámaras 1 y 3) y la **cámara cenital** (que ahora tiene «niebla» sobre lo no explorado) usan la misma
+   minimapa (abajo a la derecha, cámaras 1 y 3, **solo mientras mantienes Tab**) y la **cámara cenital** (que ahora tiene «niebla» sobre lo no explorado) usan la misma
    información. Entrada en verde, salida en rojo (verde claro al abrirse; solo si se ha descubierto o ya está abierta), esferas en
    amarillo (solo si su celda está descubierta) y el jugador como una flecha orientada. Una partida nueva reinicia la exploración.
 5. **Brújula** (primera y tercera persona): cinta arriba y centrada (~2 % de la pantalla) con N, NE, E, SE, S, SO, O, NO que se
@@ -215,13 +216,13 @@ Laberinto3D_v6/
 ```bash
 python pruebas/verificar_logica.py                                           # sin pantalla: lógica y geometría (18 pruebas)
 xvfb-run -a -s "-screen 0 1280x720x24" python pruebas/verificar_gl.py        # aspecto clásico con contexto OpenGL (17 pruebas) + capturas
-xvfb-run -a -s "-screen 0 1280x720x24" python pruebas/verificar_terror.py    # modo terror: shader, linterna, texturas, fallback (18 pruebas)
+xvfb-run -a -s "-screen 0 1280x720x24" python pruebas/verificar_terror.py    # modo terror: shader, linterna, texturas, fallback, teclas (19 pruebas)
 xvfb-run -a -s "-screen 0 1280x720x24" python pruebas/verificar_arranque.py  # compila, arranca main.py y el bucle real
 ```
 
 (`xvfb-run` solo hace falta en servidores sin pantalla; con escritorio se ejecutan directamente.)
 
-Resultado de la última ejecución: **18/18, 17/17, 18/18 (terror) y 3/3**. Cubren: laberintos conexos y puerta en callejón (3 dificultades × 8 semillas);
+Resultado de la última ejecución: **18/18, 17/17, 19/19 (terror) y 3/3**. Cubren: laberintos conexos y puerta en callejón (3 dificultades × 8 semillas);
 esferas únicas, transitables y alcanzables con la puerta cerrada (640 esferas); caras laterales = exactamente las pared-suelo y ninguna entre
 muros ni hacia fuera; normales unitarias, orientación antihoraria coherente con la normal y UV sin deformación; reconstrucción exacta de
 los vértices compartidos; tipos `float32`/`uint16`; tamaños reales de VBO/EBO en la GPU; `glDrawElements` sin `glDrawArrays` en primera
@@ -235,8 +236,8 @@ jugador-cámara siempre libre; el salto máximo de distancia por fotograma al gi
 al cerrar (29 buffers y 15 texturas → 0). Las capturas de `pruebas/capturas/` salen de esas ejecuciones.
 
 Modo terror (`verificar_terror.py`): shader enlazado y activo por defecto; brillo medio ≈ 5 veces menor que el clásico; linterna con
-cono (centro más brillante que las esquinas) y apagable; T e I; **el modo clásico es idéntico píxel a píxel tras alternar T** (12 vistas
-con HUD) y su escena 3D es idéntica a la de la versión anterior (24 vistas, comparadas contra el commit previo); cenital legible; texto
+cono (centro más brillante que las esquinas) y apagable; R y E; **el modo clásico es idéntico píxel a píxel tras alternar R** (12 vistas
+con HUD); Tab mantenido abre el minimapa y soltarlo lo cierra; FOV 60; cenital legible; texto
 del HUD sin cambios de color; esferas (5 000 px dorados) y portal brillan con la linterna apagada; parpadeo, ráfagas y apagones de 0.2–0.5 s
 (15 min simulados); balanceo ≤ 0.018 y nulo en clásico; texturas sucias del mismo tamaño, más oscuras, menos saturadas y sin costura;
 estado GL limpio (programa 0, mezcla, máscara de profundidad, texturas y pilas); fallback con un shader roto (aviso por consola y modo

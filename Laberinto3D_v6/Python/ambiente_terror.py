@@ -1,7 +1,7 @@
 """Ambiente de terror (survival horror): oscuridad, niebla, linterna, texturas sucias, viñeta, grano y sonido.
 
 Es un retoque de atmósfera: no toca la lógica de juego, los buffers ni la geometría. `Juego` solo llama a
-unos pocos ganchos (ver los métodos públicos de `AmbienteTerror`). La tecla T alterna entre modo terror y
+unos pocos ganchos (ver los métodos públicos de `AmbienteTerror`). La tecla R alterna entre modo terror y
 modo clásico; en modo clásico no se ejecuta nada de este módulo y el aspecto es el de siempre.
 
 Cómo funciona (todo con OpenGL 2.1 en modo compatibilidad):
@@ -302,14 +302,16 @@ class AmbienteTerror:
         return self.activo and camara != 2
 
     def tecla(self, tecla, juego):
-        """Gancho de teclado. Devuelve True si la tecla se ha consumido (T siempre; I solo en modo terror)."""
-        if tecla == pygame.K_t:
+        """Gancho de teclado. Devuelve True si la tecla se ha consumido (R siempre; E, la linterna, solo en modo terror)."""
+        if tecla == pygame.K_r:
             self.fijar(not self.activo)
             juego._avisar('Modo terror' if self.activo else 'Modo clásico')
             return True
-        if tecla == pygame.K_i and self.activo:
+        if tecla == pygame.K_e and self.activo:
             self.linterna = not self.linterna
             juego._avisar('Linterna encendida' if self.linterna else 'Linterna apagada')
+            return True
+        if tecla == pygame.K_i and self.activo:     # I es la luz local del modo clásico: sin efecto en terror.
             return True
         return False
 

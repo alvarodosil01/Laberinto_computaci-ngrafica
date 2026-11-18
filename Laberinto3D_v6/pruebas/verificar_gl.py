@@ -272,14 +272,16 @@ def main():
             libres = celdas_libres(juego.partida)
             for _ in range(25):
                 celda = azar.choice(libres)
-                colocar(juego, celda, azar.uniform(0, 360), -30.0, camara=1)     # Mira hacia abajo: todo es suelo o muro.
+                colocar(juego, celda, azar.uniform(0, 360), -40.0, camara=1)     # Mira hacia abajo (con FOV 60 el borde superior queda bajo el horizonte).
                 img = foto(juego)
                 magenta = int(((img == MAGENTA).all(axis=2)).sum())
                 malos += magenta > 0
                 vistas += 1
-            # Cámara 3: desde la altura de la cámara mirando hacia abajo tampoco debe verse el fondo.
+            # Cámara 3 con la pértiga alta (por encima de los muros): cerca del borde del mapa se ve el exterior por encima
+            # del muro perimetral (no es un hueco), así que solo se usan celdas alejadas del borde.
+            interiores = [c for c in libres if 4 <= c[0] < dif.tam - 4 and 4 <= c[1] < dif.tam - 4]
             for _ in range(15):
-                celda = azar.choice(libres)
+                celda = azar.choice(interiores)
                 colocar(juego, celda, azar.uniform(0, 360), 55.0, camara=3)
                 img = foto(juego)
                 malos += int(((img[300:] == MAGENTA).all(axis=2)).sum() > 0)
